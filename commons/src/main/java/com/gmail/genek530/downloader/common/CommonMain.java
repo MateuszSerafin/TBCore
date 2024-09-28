@@ -53,13 +53,14 @@ public class CommonMain {
         //probably should be a map
         List<DownloadableMod> candidates = targetModPack.getDownloadables();
 
-        for (Map.Entry<String, String> onDiskEntry : onDisk.entrySet()) {
-            String onDiskName = onDiskEntry.getKey();
-            String onDiskMd5 = onDiskEntry.getValue();
-
-            for (DownloadableMod candidate : candidates) {
-                if(!candidate.getName().equals(onDiskName)) continue;
-                if(candidate.getMd5().equals(onDiskMd5)) continue;
+        for (DownloadableMod candidate : candidates) {
+            if(onDisk.containsKey(candidate.getName())){
+                String onDiskMD5 = onDisk.get(candidate.getName());
+                if(!onDiskMD5.equals(candidate.getMd5())){
+                    candidate.downLoadOrReplaceToLocation(modDirectory);
+                    dirty = true;
+                }
+            } else {
                 candidate.downLoadOrReplaceToLocation(modDirectory);
                 dirty = true;
             }
