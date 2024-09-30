@@ -22,4 +22,4 @@ plugins {
 }
 
 rootProject.name = 'TB-Downloader'
-include '1-12', "1-16", 'commons'
+include '1-12', "1-16", "1-7-10", 'commons'

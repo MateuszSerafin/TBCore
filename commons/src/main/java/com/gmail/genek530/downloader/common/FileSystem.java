@@ -7,13 +7,13 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.util.Map;
 
-public class Existing {
-    public static Map<String, String> checkMD5(File destination) throws Exception {
-        if(!destination.isDirectory()) throw new Exception("Destination not a directory");
+public class FileSystem {
+    public static Map<String, String> checkMD5ForDir(File directory) throws Exception {
+        if(!directory.isDirectory()) throw new Exception("Destination not a directory");
 
         LinkedTreeMap collector = new LinkedTreeMap();
 
-        for (File file : destination.listFiles()) {
+        for (File file : directory.listFiles()) {
             if(file.isDirectory()) continue;
 
             try (InputStream inputStream = new FileInputStream(file)) {
@@ -35,5 +35,26 @@ public class Existing {
             }
         }
         return collector;
+    }
+
+    public static void deleteNonEmptyDirectory(File directory) {
+        if(directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if(files != null) {
+                for(File file : files) {
+                    deleteNonEmptyDirectory(file);
+                }
+            }
+        }
+        try {
+            if(directory.delete()) {
+                System.out.println(directory + " is deleted");
+            }
+            else {
+                System.out.println("Directory not deleted");
+            }
+        } catch (Exception e){
+            System.out.println(e);
+        }
     }
 }

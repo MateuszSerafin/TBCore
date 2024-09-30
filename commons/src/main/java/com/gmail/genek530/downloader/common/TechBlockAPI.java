@@ -8,10 +8,14 @@ import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.PublicKey;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class TechBlockAPI {
     private static String api = "https://service.techblock.pl/launcher/";
@@ -121,9 +125,7 @@ public class TechBlockAPI {
     public static void main(String[] args) throws Exception {
         connectionCertificateCheck();
         ModPackData modPackData = getModPackDataForPackId(24);
-        for (DownloadableMod downloadable : modPackData.getDownloadables()) {
-            System.out.println(downloadable);
-        }
+        modPackData.downloadConfigs(new File("C:\\Users\\ad1815uk\\Desktop\\Trash\\temp"));
     }
 }
 
@@ -209,4 +211,77 @@ class ModPackData {
         }
         return mods;
     }
+
+
+    public void downloadConfigs(File temporaryDirectory) throws Exception {
+        File mainDir = temporaryDirectory.getParentFile();
+        //this directory should be empty at beginning
+        FileSystem.deleteNonEmptyDirectory(temporaryDirectory);
+        if(!temporaryDirectory.exists()) temporaryDirectory.mkdir();
+
+        //download and extract zip into temporary folder
+        InputStream inputStream = TechBlockAPI.getRequestToInputStream("repository/" + this.getAuthor() + "/packs/" + this.getPackID() + "/" + this.getLatestVersion() +  "/mods/../config.zip");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int bytesRead;
+        while ((bytesRead = inputStream.read(buffer)) != -1) {
+            baos.write(buffer, 0, bytesRead);
+        }
+        byte[] zipBytes = baos.toByteArray();
+        InputStream zipIn = new ByteArrayInputStream(zipBytes);
+        ZipInputStream zis = new ZipInputStream(zipIn);
+        ZipEntry entry;
+        while ((entry = zis.getNextEntry()) != null) {
+            if (entry.isDirectory()) {
+                continue;
+            }
+            Path entryPath = temporaryDirectory.toPath().resolve(entry.getName());
+            if (!Files.exists(entryPath.getParent())) {
+                Files.createDirectories(entryPath.getParent());
+            }
+            try (OutputStream out = new FileOutputStream(entryPath.toFile())) {
+                byte[] entryBuffer = new byte[1024];
+                int entryBytesRead;
+                while ((entryBytesRead = zis.read(entryBuffer)) != -1) {
+                    out.write(entryBuffer, 0, entryBytesRead);
+                }
+            }
+        }
+
+        //extracted to temporary
+        for (File temporaryFile : temporaryDirectory.listFiles()) {
+            if(temporaryFile.isDirectory()){
+
+                //treat saves speciall so update won't remove player worlds
+                if(temporaryFile.getName().equals("saves")){
+                    File savesDestination = new File(mainDir + "/saves");
+
+                    //if saves directory doesn't exist copy whole folder
+                    if(!savesDestination.exists()){
+                        Files.move(temporaryFile.toPath(), savesDestination.toPath());
+                        continue;
+                    }
+
+                    if(temporaryFile.listFiles() == null) continue;
+                    for (File insideTemporarySave : temporaryFile.listFiles()) {
+                        boolean safeToCopy = true;
+                        for (File insideUserFolder : savesDestination.listFiles()) {
+                            if(insideUserFolder.getName().equals(insideTemporarySave.getName())) safeToCopy = false;
+                        }
+
+                        if(safeToCopy) Files.move(insideTemporarySave.toPath(), new File(savesDestination + "/" + insideTemporarySave.getName()).toPath());
+                    }
+                    continue;
+                }
+            }
+
+            //removes config dir and moves from temporary dir to config dir for example
+            File destinationFolder = new File(mainDir.toPath() + "/" + temporaryFile.getName());
+            if(destinationFolder.exists()) FileSystem.deleteNonEmptyDirectory(destinationFolder);
+            Files.move(temporaryFile.toPath(), destinationFolder.toPath());
+        }
+        //cleanup
+        FileSystem.deleteNonEmptyDirectory(temporaryDirectory);
+    }
+
 }

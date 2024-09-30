@@ -18,11 +18,11 @@ public class GUIThing extends JFrame {
         InputStream inputStream = classloader.getResourceAsStream("techkloc.png");
 
         BufferedImage image = ImageIO.read(inputStream);
-        Image scaled = image.getScaledInstance(500, 300, Image.SCALE_SMOOTH);
+        Image scaled = image.getScaledInstance(800, 500, Image.SCALE_SMOOTH);
         ImageIcon imageIcon = new ImageIcon(scaled);
         JLabel jLabel = new JLabel(imageIcon);
         this.add(jLabel);
-        this.setSize(500,300);
+        this.setSize(800,500);
         this.setLocationRelativeTo(null);
         this.setResizable(false);
         this.setAlwaysOnTop(true);

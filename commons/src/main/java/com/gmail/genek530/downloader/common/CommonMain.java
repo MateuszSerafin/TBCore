@@ -1,6 +1,7 @@
 package com.gmail.genek530.downloader.common;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -39,7 +40,7 @@ public class CommonMain {
 
         boolean dirty = false;
 
-        Map<String, String> onDisk = Existing.checkMD5(modDirectory);
+        Map<String, String> onDisk = FileSystem.checkMD5ForDir(modDirectory);
 
         ModPackData targetModPack;
         try {
@@ -57,16 +58,40 @@ public class CommonMain {
             if(onDisk.containsKey(candidate.getName())){
                 String onDiskMD5 = onDisk.get(candidate.getName());
                 if(!onDiskMD5.equals(candidate.getMd5())){
-                    candidate.downLoadOrReplaceToLocation(modDirectory);
                     dirty = true;
                 }
             } else {
-                candidate.downLoadOrReplaceToLocation(modDirectory);
                 dirty = true;
             }
         }
 
+        //change in behaviour if dirty redownload all mods as i wont be keeping of which mod changed including version better to just slap everything
         if(dirty){
+            File migrationFolder = new File(modDirectory.getParentFile() + "/" + "TBCoreMigrationTemporary");
+            FileSystem.deleteNonEmptyDirectory(migrationFolder);
+            migrationFolder.mkdir();
+
+            for (File file : modDirectory.listFiles()) {
+               if(file.getName().toLowerCase().contains("tbcore")){
+                   Files.copy(file.toPath(), new File(migrationFolder + "/" + file.getName()).toPath());
+               }
+            }
+
+            FileSystem.deleteNonEmptyDirectory(modDirectory);
+            modDirectory.mkdir();
+
+            for (File file : migrationFolder.listFiles()) {
+                if(file.getName().toLowerCase().contains("tbcore")){
+                    Files.copy(file.toPath(), new File(modDirectory + "/" + file.getName()).toPath());
+                }
+            }
+            System.out.println("Remove migrationFolder");
+            FileSystem.deleteNonEmptyDirectory(migrationFolder);
+
+            for (DownloadableMod candidate : candidates) {
+                candidate.downLoadOrReplaceToLocation(modDirectory);
+            }
+
             //this should only be ran on client side so should be ok
             System.setProperty("java.awt.headless", "false");
             GUIThing guiThing = new GUIThing();
