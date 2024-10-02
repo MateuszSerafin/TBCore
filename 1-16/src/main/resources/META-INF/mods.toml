@@ -15,11 +15,11 @@ license="All Rights Reserved"
 # A list of mods - how many allowed here is determined by the individual mod loader
 [[mods]] #mandatory
 # The modid of the mod
-modId="tbdownloader" #mandatory
+modId="tbcore" #mandatory
 # The version number of the mod
-version="1.0.0" #mandatory
+version="1.0.1" #mandatory
 # A display name for the mod
-displayName="TB-Downloader" #mandatory
+displayName="TBCore" #mandatory
 # A URL to query for updates for this mod. See the JSON update specification https://docs.minecraftforge.net/en/latest/misc/updatechecker/
 #updateJSONURL="https://change.me.example.invalid/updates.json" #optional
 # A URL for the "homepage" for this mod, displayed in the mod UI
@@ -32,7 +32,7 @@ displayName="TB-Downloader" #mandatory
 authors="linuxnakoksie, genek530" #optional
 
 # The description text for the mod (multi line!) (#mandatory)
-description='''Required for essential updates for techblock modpacks'''
+description='''Required for mods that are not on curse happens sometimes'''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.tbdownloader]] #optional
 # the modid of the dependency

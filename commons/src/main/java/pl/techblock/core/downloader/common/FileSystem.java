@@ -1,4 +1,4 @@
-package com.gmail.genek530.downloader.common;
+package pl.techblock.core.downloader.common;
 
 import com.google.gson.internal.LinkedTreeMap;
 import java.io.File;

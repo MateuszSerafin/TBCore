@@ -1,4 +1,4 @@
-package com.gmail.genek530.downloader.common;
+package pl.techblock.core.downloader.common;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;

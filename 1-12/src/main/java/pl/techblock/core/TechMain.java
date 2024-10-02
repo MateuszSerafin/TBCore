@@ -1,18 +1,17 @@
-package com.gmail.genek530;
+package pl.techblock.core;
 
-import com.gmail.genek530.downloader.common.CommonMain;
-import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.Mod.EventHandler;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import pl.techblock.core.downloader.common.CommonMain;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.Mod.EventHandler;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.Logger;
 import java.io.File;
 
 @Mod(modid = TechMain.MODID, name = TechMain.NAME, version = TechMain.VERSION)
 public class TechMain {
-    public static final String MODID = "tbdownloader";
-    public static final String NAME = "TB-Downloader";
-    public static final String VERSION = "1.0";
-
+    public static final String MODID = "tbcore";
+    public static final String NAME = "TBCore";
+    public static final String VERSION = "1.0.1";
     private static Logger logger;
 
     @EventHandler
