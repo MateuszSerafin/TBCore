@@ -39,8 +39,6 @@ public class CommonMain {
 
         boolean dirty = false;
 
-        Map<String, String> onDisk = FileSystem.checkMD5ForDir(modDirectory);
-
         ModPackData targetModPack;
         try {
             targetModPack = TechBlockAPI.getModPackDataForPackId(modPackID);
@@ -53,19 +51,9 @@ public class CommonMain {
         //probably should be a map
         List<DownloadableMod> candidates = targetModPack.getDownloadables();
 
+        dirty = false;
         for (DownloadableMod candidate : candidates) {
-            if(onDisk.containsKey(candidate.getName())){
-                continue;
-                //we decided it should only download mods that are not on curse.
-                /*
-                String onDiskMD5 = onDisk.get(candidate.getName());
-                if(!onDiskMD5.equals(candidate.getMd5())){
-                    candidate.downLoadOrReplaceToLocation(modDirectory);
-                    dirty = true;
-                }
-                 */
-            } else {
-                candidate.downLoadOrReplaceToLocation(modDirectory);
+            if(candidate.downLoadOrReplaceToLocation(modDirectory)){
                 dirty = true;
             }
         }

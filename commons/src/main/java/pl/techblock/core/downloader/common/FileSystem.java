@@ -3,11 +3,18 @@ package pl.techblock.core.downloader.common;
 import com.google.gson.internal.LinkedTreeMap;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FileSystem {
+
     public static Map<String, String> checkMD5ForDir(File directory) throws Exception {
         if(!directory.isDirectory()) throw new Exception("Destination not a directory");
 
@@ -35,6 +42,15 @@ public class FileSystem {
             }
         }
         return collector;
+    }
+
+    public static List<Path> listFiles(Path path) throws IOException {
+        List<Path> result;
+        try (Stream<Path> walk = Files.walk(path)) {
+            result = walk.filter(Files::isRegularFile)
+                    .collect(Collectors.toList());
+        }
+        return result;
     }
 
     public static void deleteNonEmptyDirectory(File directory) {

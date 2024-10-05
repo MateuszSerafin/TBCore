@@ -120,10 +120,15 @@ public class TechBlockAPI {
     //leave for testing
     public static void main(String[] args) throws Exception {
         connectionCertificateCheck();
-        ModPackData modPackData = getModPackDataForPackId(24);
-        for (DownloadableMod downloadable : modPackData.getDownloadables()) {
-            System.out.println(downloadable);
+        Set<Map.Entry<Integer, ModPackData>> modPackData = listModPacks().entrySet();
+
+        for (Map.Entry<Integer, ModPackData> modPackDatum : modPackData) {
+            for(DownloadableMod downloadableMod : modPackDatum.getValue().getDownloadables()){
+                System.out.println(downloadableMod.getName() + ": "  + modPackDatum.getKey());
+                //downloadableMod.downLoadOrReplaceToLocation(new File("C:\\Users\\ad1815uk\\Desktop\\Trash"));
+            }
         }
+        //System.out.println(FileSystem.listFiles(new File("C:\\Users\\ad1815uk\\Desktop\\Trash").toPath()));
     }
 }
 
@@ -148,12 +153,35 @@ class DownloadableMod {
         return md5;
     }
 
-    public void downLoadOrReplaceToLocation(File directory) throws Exception {
-        if(!directory.isDirectory()) throw new Exception("Destination is not a directory");
-        File destinationFile = new File(directory.getPath() + "/" + this.name);
-        if(destinationFile.exists()) destinationFile.delete();
 
-        InputStream inputStream = TechBlockAPI.getRequestToInputStream("repository/" + modPackData.getAuthor() + "/packs/" + modPackData.getPackID() + "/" + modPackData.getLatestVersion() +  "/mods/" + this.name);
+    //true if dirty
+    public boolean downLoadOrReplaceToLocation(File directory) throws Exception {
+        if(!directory.exists()) throw new Exception("Directory should exist");
+        if(!directory.isDirectory()) throw new Exception("Destination is not a directory");
+
+        //i didn't write our api
+        File destinationFile = null;
+
+        if(this.getName().contains("|")){
+            String[] splited = this.getName().split("\\|");
+
+            StringBuilder fullPath = new StringBuilder();
+            fullPath.append(directory.toPath());
+            for (int i = 0; i < splited.length - 1; i++) {
+                //create parent dir if doesn't exist
+                String toAdd = splited[i];
+                fullPath.append("/" + toAdd);
+                new File(fullPath.toString()).mkdir();
+            }
+            fullPath.append("/" + splited[splited.length - 1]);
+            destinationFile = new File(fullPath.toString());
+        } else {
+            destinationFile = new File(directory.getPath() + "/" + this.name);
+        }
+
+        if(destinationFile.exists()) return false;
+
+        InputStream inputStream = TechBlockAPI.getRequestToInputStream("repository/" + modPackData.getAuthor() + "/packs/" + modPackData.getPackID() + "/" + modPackData.getLatestVersion() +  "/mods/" + this.name.replace("|", "/"));
         FileOutputStream writer = new FileOutputStream(destinationFile);
         byte[] buffer = new byte[8 * 1024];
         int bytesRead;
@@ -162,6 +190,7 @@ class DownloadableMod {
         }
         inputStream.close();
         writer.close();
+        return true;
     }
 }
 
@@ -188,7 +217,7 @@ class ModPackData {
     }
 
     public String getLatestVersion(){
-        Map<String, String> latest = this.getVersions().get(this.getVersions().size() - 1);
+        Map<String, String> latest = this.getVersions().get(0);
         return latest.get("v");
     }
 
