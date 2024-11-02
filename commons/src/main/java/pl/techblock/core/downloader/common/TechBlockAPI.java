@@ -3,26 +3,73 @@ package pl.techblock.core.downloader.common;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
 public class TechBlockAPI {
-    private static String api = "https://service.techblock.pl/launcher/";
+    //techblock.pl is under cloudflare and certificates change every X amount of time
+    //mdp.techblock.pl is still under cloudflare but is proxied and certificate does not change
+    //no idea i did not set it up
+    //it should be working properly now
+    private static String api = "https://mdp.techblock.pl/launcher/";
 
     private static boolean checked = false;
 
+    private static HttpsURLConnection openConnectionWithMyCert(URL url) throws Exception {
+        TrustManager[] trustManagers = new TrustManager[] {
+                new X509TrustManager() {
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] chain, String authType){
+                    }
+
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                        X509Certificate serverCert = chain[0];
+
+                        PublicKey knownServerCert = null;
+
+                        try {
+                            knownServerCert = getTechPublic();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        if(!serverCert.getPublicKey().equals(knownServerCert)){
+                            throw new CertificateException("Certificate does not match");
+                        }
+                    }
+
+                    @Override
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+                }
+        };
+
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(null, trustManagers, new SecureRandom());
+        HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
+        con.setSSLSocketFactory(sslContext.getSocketFactory());
+        return con;
+    }
+
+
     protected static boolean connectionCertificateCheck(){
-        URL url;
         try {
-            url = new URL(api);
-            HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
+            URL url = new URL(api);
+            HttpsURLConnection con = openConnectionWithMyCert(url);
             con.connect();
 
             PublicKey serverPublicKey = con.getServerCertificates()[0].getPublicKey();
@@ -45,6 +92,7 @@ public class TechBlockAPI {
 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         X509Certificate certificate = (X509Certificate) cf.generateCertificate(inputStream);
+        inputStream.close();
 
         return certificate.getPublicKey();
     }
@@ -55,7 +103,7 @@ public class TechBlockAPI {
         }
         URL url = new URL(new URI(null, null, api + appendTo, null).toString());
 
-        HttpsURLConnection c = (HttpsURLConnection) url.openConnection();
+        HttpsURLConnection c = openConnectionWithMyCert(url);
         c.setRequestMethod("GET");
         c.setRequestProperty("User-Agent", "Mozilla/5.0 (compatible; Java)");
 
@@ -66,6 +114,7 @@ public class TechBlockAPI {
         for (int numRead; (numRead = in.read(buffer, 0, buffer.length)) > 0; ) {
             out.append(buffer, 0, numRead);
         }
+        in.close();
         return out.toString();
     }
 
@@ -76,7 +125,7 @@ public class TechBlockAPI {
 
         URL url = new URL(new URI(null, null, api + appendTo, null).toString());
 
-        HttpsURLConnection c = (HttpsURLConnection) url.openConnection();
+        HttpsURLConnection c = openConnectionWithMyCert(url);
         c.setRequestMethod("GET");
         c.setRequestProperty("User-Agent", "Mozilla/5.0 (compatible; Java)");
 
@@ -109,7 +158,6 @@ public class TechBlockAPI {
         return accumulator;
     }
 
-    //@Nullable
     public static ModPackData getModPackDataForPackId(int packID) throws Exception {
         //no longer call certificate there bcs its separated now
         //connectionCertificateCheck();
@@ -119,28 +167,20 @@ public class TechBlockAPI {
 
     //leave for testing
     public static void main(String[] args) throws Exception {
-        connectionCertificateCheck();
-        Set<Map.Entry<Integer, ModPackData>> modPackData = listModPacks().entrySet();
-
-        for (Map.Entry<Integer, ModPackData> modPackDatum : modPackData) {
-            for(DownloadableMod downloadableMod : modPackDatum.getValue().getDownloadables()){
-                System.out.println(downloadableMod.getName() + ": "  + modPackDatum.getKey());
-                //downloadableMod.downLoadOrReplaceToLocation(new File("C:\\Users\\ad1815uk\\Desktop\\Trash"));
-            }
-        }
-        //System.out.println(FileSystem.listFiles(new File("C:\\Users\\ad1815uk\\Desktop\\Trash").toPath()));
     }
 }
 
 class DownloadableMod {
 
     private ModPackData modPackData;
+    private String version;
     private String name;
     private String md5;
 
 
-    public DownloadableMod(ModPackData modPackData, String name, String md5){
+    public DownloadableMod(ModPackData modPackData, String version, String name, String md5){
         this.modPackData = modPackData;
+        this.version = version;
         this.name = name;
         this.md5 = md5;
     }
@@ -181,7 +221,7 @@ class DownloadableMod {
 
         if(destinationFile.exists()) return false;
 
-        InputStream inputStream = TechBlockAPI.getRequestToInputStream("repository/" + modPackData.getAuthor() + "/packs/" + modPackData.getPackID() + "/" + modPackData.getLatestVersion() +  "/mods/" + this.name.replace("|", "/"));
+        InputStream inputStream = TechBlockAPI.getRequestToInputStream("repository/" + modPackData.getAuthor() + "/packs/" + modPackData.getPackID() + "/" + this.version +  "/mods/" + this.name.replace("|", "/"));
         FileOutputStream writer = new FileOutputStream(destinationFile);
         byte[] buffer = new byte[8 * 1024];
         int bytesRead;
@@ -197,6 +237,7 @@ class DownloadableMod {
 class ModPackData {
     private String author;
     private int packID;
+
     private List<Map<String, String>> versions;
     public ModPackData(String author, int packID, List<Map<String, String>> versions){
         this.author = author;
@@ -212,17 +253,17 @@ class ModPackData {
         return packID;
     }
 
-    public List<Map<String, String>> getVersions() {
-        return versions;
+    public List<String> getVersions() {
+        ArrayList<String> toReturn = new ArrayList<>();
+
+        for (Map<String, String> version : versions) {
+            toReturn.add(version.get("v"));
+        }
+        return toReturn;
     }
 
-    public String getLatestVersion(){
-        Map<String, String> latest = this.getVersions().get(0);
-        return latest.get("v");
-    }
-
-    public List<DownloadableMod> getDownloadables() throws Exception {
-        String rawData = TechBlockAPI.sendGet("repository/" + this.getAuthor() + "/packs/" + packID + "/" + this.getLatestVersion() + "/data.json");
+    public List<DownloadableMod> getDownloadables(String version) throws Exception {
+        String rawData = TechBlockAPI.sendGet("repository/" + this.getAuthor() + "/packs/" + packID + "/" + version + "/data.json");
 
         Gson gson = new Gson();
 
@@ -234,7 +275,7 @@ class ModPackData {
         List<DownloadableMod> mods = new ArrayList<>();
 
         for (Map<String, String> stringStringMap : modsList) {
-            mods.add(new DownloadableMod(this, stringStringMap.get("name"), stringStringMap.get("md5").toLowerCase()));
+            mods.add(new DownloadableMod(this, version, stringStringMap.get("name"), stringStringMap.get("md5").toLowerCase()));
         }
         return mods;
     }

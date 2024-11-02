@@ -1,9 +1,10 @@
 package pl.techblock.core.downloader.common;
 
 import java.io.File;
+import java.io.FileReader;
 import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 import org.apache.logging.log4j.Logger;
 
 public class CommonMain {
@@ -20,19 +21,17 @@ public class CommonMain {
 
         File configFile = new File(configDirectory.getPath() + "/TBD.config");
 
-        int modPackID;
+        KlocConfig klocConfig = null;
 
         if(configFile.exists()){
-            Scanner scanner = new Scanner(configFile);
-
-            if(scanner.hasNextInt()){
-                modPackID = scanner.nextInt();
-                logger.info("TBD.config MOD pack ID: " + modPackID);
-            } else {
-                scanner.close();
-                throw new Exception("Invalid value in TBD.config");
+            try {
+                Gson gson = new Gson();
+                JsonReader reader = new JsonReader(new FileReader(configFile));
+                klocConfig = gson.fromJson(reader, KlocConfig.class);
+                reader.close();
+            } catch (Exception e){
+                throw new Exception("Wrong config in TBD.config");
             }
-            scanner.close();
         } else {
             throw new Exception("Unable to find TBD.config");
         }
@@ -41,15 +40,25 @@ public class CommonMain {
 
         ModPackData targetModPack;
         try {
-            targetModPack = TechBlockAPI.getModPackDataForPackId(modPackID);
+            targetModPack = TechBlockAPI.getModPackDataForPackId(klocConfig.getModPackID());
         } catch (Exception e) {
             logger.info("Issue with techblock API");
             e.printStackTrace();
             return;
         }
+        try {
+            if(!targetModPack.getVersions().contains(klocConfig.getVersion())){
+                throw new Exception("Wrong modpack version in TBD.config");
+            }
+        } catch (Exception e){
+            logger.info("Issue with getting version");
+            e.printStackTrace();
+            return;
+        }
+
 
         //probably should be a map
-        List<DownloadableMod> candidates = targetModPack.getDownloadables();
+        List<DownloadableMod> candidates = targetModPack.getDownloadables(klocConfig.getVersion());
 
         dirty = false;
         for (DownloadableMod candidate : candidates) {
