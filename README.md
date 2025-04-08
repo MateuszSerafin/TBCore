@@ -6,7 +6,6 @@ TBCore is a simple mod that checks if all required mods are downloaded for our m
 
 CurseForge Page: https://www.curseforge.com/minecraft/mc-mods/tbcore
 
-## Building
-Clone the repository <br>
-Run reobfshadowjar <br>
-This will build the mod and create a jar file in the build/libs directory
+# Building
+I tried to make multi-version project but Gradle doesn't like range of versions 1.7.10 - 1.21.1. <br>
+Every version we need is in separate branch. Please look at branches at compile from there.
