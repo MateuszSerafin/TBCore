@@ -17,7 +17,7 @@ license="All Rights Reserved"
 # The modid of the mod
 modId="tbcore" #mandatory
 # The version number of the mod
-version="1.0.3" #mandatory
+version="1.0.4" #mandatory
 # A display name for the mod
 displayName="TBCore" #mandatory
 # A URL to query for updates for this mod. See the JSON update specification https://docs.minecraftforge.net/en/latest/misc/updatechecker/
@@ -29,12 +29,9 @@ displayName="TBCore" #mandatory
 # A text field displayed in the mod UI
 #credits="" #optional
 # A text field displayed in the mod UI
-authors="linuxnakoksie, genek530" #optional
-
+authors="FfFn6XCqhpxY, linuxnakoksie" #optional
 # The description text for the mod (multi line!) (#mandatory)
 description='''Required for mods that are not on curse happens sometimes'''
-# A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
-[[dependencies.tbdownloader]] #optional
 # the modid of the dependency
 modId="forge" #mandatory
 # Does this dependency have to exist - if not, ordering below must be specified

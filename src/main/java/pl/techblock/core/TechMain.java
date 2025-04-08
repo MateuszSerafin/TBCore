@@ -1,6 +1,6 @@
 package pl.techblock.core;
 
-import pl.techblock.core.downloader.common.CommonMain;
+import pl.tbcore.lib.CommonMain;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
