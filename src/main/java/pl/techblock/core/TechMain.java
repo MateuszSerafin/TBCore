@@ -1,32 +1,22 @@
 package pl.techblock.core;
 
-import pl.tbcore.lib.CommonMain;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLPaths;
-import org.apache.logging.log4j.LogManager;
+import net.minecraftforge.fml.common.Mod.EventHandler;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.Logger;
+import pl.tbcore.lib.CommonMain;
 import java.io.File;
 
-@Mod("tbcore")
+@Mod(modid = TechMain.MODID, name = TechMain.NAME, version = TechMain.VERSION)
 public class TechMain {
+    public static final String MODID = "tbcore";
+    public static final String NAME = "TBCore";
+    public static final String VERSION = "1.0.4";
+    private static Logger logger;
 
-    private static final Logger LOGGER = LogManager.getLogger();
-
-    public TechMain() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
-        MinecraftForge.EVENT_BUS.register(this);
-    }
-
-    private void setup(final FMLCommonSetupEvent event) {
-        File serverDir = new File(FMLPaths.GAMEDIR.get().toString());
-        try {
-            CommonMain.main(LOGGER, new File(serverDir + "/config"), new File(serverDir + "/mods"), false);
-        } catch (Exception e) {
-            //yes force throwing exceptions there.
-            throw new RuntimeException(e);
-        }
+    @EventHandler
+    public void preInit(FMLPreInitializationEvent event) throws Exception {
+        logger = event.getModLog();
+        CommonMain.main(logger, new File(event.getModConfigurationDirectory().getParent().toString() + "/config"), new File(event.getModConfigurationDirectory().getParent().toString() + "/mods"), true);
     }
 }
