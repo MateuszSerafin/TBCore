@@ -5,27 +5,26 @@ buildscript {
             name = "forge"
             url = "https://maven.minecraftforge.net/"
         }
+        maven {
+            url 'https://plugins.gradle.org/m2/'
+        }
     }
     dependencies {
         classpath ('com.anatawa12.forge:ForgeGradle:1.2-1.1.+') {
             changing = true
         }
+        classpath 'gradle.plugin.com.github.johnrengelman:shadow:7.1.1'
     }
-}
-
-plugins {
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 apply plugin: 'forge'
 apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'  // apply after forge
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 
 repositories {
     mavenLocal()
@@ -45,13 +44,12 @@ dependencies {
 }
 
 shadowJar {
-    archiveClassifier = ''
+    archiveClassifier = 'dev'
     configurations = [project.configurations.shade]
-    finalizedBy 'reobfShadowJar'
 }
-
-assemble.dependsOn shadowJar
 
 reobf {
     shadowJar {}
 }
+
+assemble.dependsOn 'reobfShadowJar'
